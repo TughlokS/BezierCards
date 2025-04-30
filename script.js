@@ -2,146 +2,97 @@
 const COLOR_BEZIER_START = '#353535'; // dark gray
 const COLOR_BEZIER_END = '#353535';   // dark gray
 
-// Store the current control points to prevent jitter during resize
-let currentControlPoints = {};
-
 // Debounce variables
 let resizeTimeout;
 const RESIZE_DELAY = 300; // ms to wait after resize stops
 
-// Initialize canvases when the DOM is fully loaded
+// Initialize SVGs when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Get all canvas elements
-    const canvases = document.querySelectorAll('.bezier-canvas');
+    // Get all SVG elements
+    const svgs = document.querySelectorAll('.bezier-svg');
     
-    // Initialize each canvas with unique control points
-    canvases.forEach((canvas, index) => {
-        currentControlPoints[index] = {
-            randomPoint1: null,
-            randomPoint2: null
-        };
-        initCanvas(canvas, index);
+    // Initialize each SVG with unique gradient IDs
+    svgs.forEach((svg, index) => {
+        // Ensure unique gradient IDs
+        const gradient = svg.querySelector('linearGradient');
+        gradient.id = `bezier-gradient-${index}`;
+        
+        // Update gradient references
+        svg.querySelector('.bezier-area').setAttribute('fill', `url(#bezier-gradient-${index})`);
+        svg.querySelector('.bezier-curve').setAttribute('stroke', `url(#bezier-gradient-${index})`);
+        
+        initSVG(svg, index);
     });
 });
 
-// Set canvas size to match its container and draw bezier curve
-function initCanvas(canvas, index) {
-    const ctx = canvas.getContext('2d');
+// Initialize SVG and set up resize listener
+function initSVG(svg, index) {
+    // Initial draw
+    updateBezierSVG(svg);
     
-    // Set initial size
-    resizeCanvasToContainer(canvas, index);
-    
-    // Redraw on window resize
+    // Update on window resize
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
-            resizeCanvasToContainer(canvas, index);
+            updateBezierSVG(svg);
         }, RESIZE_DELAY);
     });
 }
 
-// Resize a canvas to match its container size
-function resizeCanvasToContainer(canvas, index) {
-    // Set canvas size to match its displayed (CSS) size to avoid squeeze
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
+// Update the SVG bezier curve based on container dimensions
+function updateBezierSVG(svg) {
+    // Get SVG dimensions
+    const svgRect = svg.getBoundingClientRect();
+    const width = svgRect.width;
+    const height = svgRect.height;
     
-    // Draw with current control points or generate new ones
-    drawBezierCurve(canvas, index, true);
-}
-
-// Draw the Bezier curve
-function drawBezierCurve(canvas, index, generateNewRandomPoints = false) {
-    const ctx = canvas.getContext('2d');
-    
-    // Clear the canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Calculate padding values based on canvas dimensions
-    const paddingRatio = 0.15;
-    const minSide = Math.min(canvas.width, canvas.height);
+    // Calculate padding values
+    const paddingRatio = 0;
+    const minSide = Math.min(width, height);
     const xPadding = Math.min(20, minSide * paddingRatio);
     const yPadding = Math.min(20, minSide * paddingRatio);
     
-    // Define start (0,0)->bottom-left and end (1,1)->top-right in canvas coords
-    const p0 = { x: xPadding, y: canvas.height - yPadding };
-    const p3 = { x: canvas.width - xPadding, y: yPadding };
+    // Define start and end points (bottom-left to top-right)
+    const p0 = { x: xPadding, y: height - yPadding };
+    const p3 = { x: width - xPadding, y: yPadding };
     
-    // Parse control values from card text "x1, y1, x2, y2"
-    const vals = canvas.closest('.card').querySelector('.card-content p').textContent.trim().split(',').map(Number);
+    // Get bezier curve parameters from the card's text
+    const card = svg.closest('.card');
+    const vals = card.querySelector('.card-content p').textContent.trim().split(',').map(Number);
     const [x1, y1, x2, y2] = vals;
-    const usableW = canvas.width - 2 * xPadding;
-    const usableH = canvas.height - 2 * yPadding;
+    
+    // Calculate control points
+    const usableW = width - 2 * xPadding;
+    const usableH = height - 2 * yPadding;
     const cp1 = { x: p0.x + x1 * usableW, y: p0.y - y1 * usableH };
     const cp2 = { x: p0.x + x2 * usableW, y: p0.y - y2 * usableH };
     
-    // Create gradient for the curve
-    // Gradient goes from fixedPoint1 (top right, COLOR_BEZIER_START) to fixedPoint2 (bottom left, COLOR_BEZIER_END)
-    const gradient = ctx.createLinearGradient(
-        p0.x, p0.y,
-        
-        p3.x, p3.y
-    );
-    gradient.addColorStop(0, COLOR_BEZIER_START);  // Top right color (fixedPoint1)
-    gradient.addColorStop(1, COLOR_BEZIER_END);    // Bottom left color (fixedPoint2)
-
-    // --- Fill the area under the curve with a curve-following gradient ---
-    ctx.save();
-    const N = 100; // Number of curve segments (higher = smoother)
-    for (let i = 0; i < N; i++) {
-        const t1 = i / N;
-        const t2 = (i + 1) / N;
-        // Get points along the curve
-        const p1 = getCubicBezierPoint(p0, cp1, cp2, p3, t1);
-        const p2 = getCubicBezierPoint(p0, cp1, cp2, p3, t2);
-        // Interpolate color for each segment
-        const color1 = lerpColor(COLOR_BEZIER_START, COLOR_BEZIER_END, t1);
-        const color2 = lerpColor(COLOR_BEZIER_START, COLOR_BEZIER_END, t2);
-        // Draw a vertical strip for this segment
-        const baseY = Math.max(p0.y, p3.y);
-        // Create vertical gradient for the strip
-        const grad = ctx.createLinearGradient(0, p1.y, 0, baseY);
-        grad.addColorStop(0, hexToRgba(color1, 0.2)); // Reduced opacity (0.45 -> 0.2)
-        grad.addColorStop(1, hexToRgba(color1, 0.0));
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.lineTo(p2.x, baseY);
-        ctx.lineTo(p1.x, baseY);
-        ctx.closePath();
-        ctx.fillStyle = grad;
-        ctx.fill();
-    }
-    ctx.restore();
-
-    // Draw the curve
-    ctx.beginPath();
-    ctx.moveTo(p0.x, p0.y);
-    ctx.bezierCurveTo(
-        cp1.x, cp1.y,
-        cp2.x, cp2.y,
-        p3.x, p3.y
-    );
+    // Update the SVG viewBox to match dimensions
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     
-    // Style the curve with gradient
-    ctx.strokeStyle = gradient;
-    ctx.lineWidth = Math.min(canvas.width, canvas.height) * 0.03; // Reduced thickness
-    ctx.stroke();
+    // Update the bezier curve path
+    const curvePath = svg.querySelector('.bezier-curve');
+    curvePath.setAttribute('d', `M ${p0.x},${p0.y} C ${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${p3.x},${p3.y}`);
     
-    // Draw circles at the fixed points
-    const circleRadius = Math.max(2, Math.min(Math.min(canvas.width, canvas.height) * 0.02, 4));
+    // Update stroke width based on size
+    curvePath.setAttribute('stroke-width', Math.min(width, height) * 0.03);
     
-    // Draw circle at first fixed point (bottom left)
-    ctx.beginPath();
-    ctx.arc(p0.x, p0.y, circleRadius, 0, Math.PI * 2);
-    ctx.fillStyle = COLOR_BEZIER_START;
-    ctx.fill();
+    // Update the area under the curve
+    const areaPath = svg.querySelector('.bezier-area');
+    areaPath.setAttribute('d', `M ${p0.x},${p0.y} C ${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${p3.x},${p3.y} L ${p3.x},${height} L ${p0.x},${height} Z`);
     
-    // Draw circle at second fixed point (top right)
-    ctx.beginPath();
-    ctx.arc(p3.x, p3.y, circleRadius, 0, Math.PI * 2);
-    ctx.fillStyle = COLOR_BEZIER_END;
-    ctx.fill();
+    // Update the start and end circles
+    const startCircle = svg.querySelector('.start-point');
+    const endCircle = svg.querySelector('.end-point');
+    const circleRadius = Math.max(2, Math.min(Math.min(width, height) * 0.02, 4));
+    
+    startCircle.setAttribute('cx', p0.x);
+    startCircle.setAttribute('cy', p0.y);
+    startCircle.setAttribute('r', circleRadius);
+    
+    endCircle.setAttribute('cx', p3.x);
+    endCircle.setAttribute('cy', p3.y);
+    endCircle.setAttribute('r', circleRadius);
 }
 
 // Helper: Get a point on a cubic Bezier curve
@@ -172,10 +123,10 @@ function hexToRgba(hex, alpha) {
     return `rgba(${r},${g},${b},${alpha})`;
 }
 
-// Force initial draw after a short delay to ensure canvas is properly sized
+// Force initial draw after a short delay to ensure SVG is properly sized
 setTimeout(() => {
-    const canvases = document.querySelectorAll('.bezier-canvas');
-    canvases.forEach((canvas, index) => {
-        resizeCanvasToContainer(canvas, index);
+    const svgs = document.querySelectorAll('.bezier-svg');
+    svgs.forEach((svg) => {
+        updateBezierSVG(svg);
     });
 }, 100);
