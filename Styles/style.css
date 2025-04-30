@@ -71,7 +71,7 @@ body {
   text-overflow: ellipsis;
   width: 100%; /* Ensure it takes full width of parent */
 }
-.cards .card .canvas-container {
+.cards .card .svg-container {
   position: relative;
   top: 0;
   left: 0;
@@ -80,7 +80,7 @@ body {
   z-index: 0;
   pointer-events: none;
 }
-.cards .card .canvas-container .bezier-svg {
+.cards .card .svg-container .bezier-svg {
   position: absolute;
   top: 0;
   left: 0;
@@ -90,7 +90,7 @@ body {
   border-radius: 5px;
   transition: all 0.3s ease;
 }
-.cards .card .canvas-container .bezier-svg .bezier-curve {
+.cards .card .svg-container .bezier-svg .bezier-curve {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
