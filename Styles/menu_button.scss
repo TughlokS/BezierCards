@@ -1,0 +1,205 @@
+// Animation variables
+$animation-curve: cubic-bezier(0.25, 1.6, 0.8, 1);
+$transition-fast: 0.2s;
+$transition-medium: 0.3s;
+$menu-spacing: 0.75rem;
+$menu-item-padding: 0.5rem;
+$border-radius-md: 0.5rem;
+$border-radius-lg: 1rem;
+$apple-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.12);
+$apple-glass: rgba(255, 255, 255, 0.7);
+
+// Colors
+$primary-color: #ffffff;
+$secondary-color: #1d1d1f;
+$accent-color: #3f3f3f;
+$canvas-color: #ff1861;
+$preset-color: #00d9ff;
+$trash-color: #b30009;
+
+.menu-container {
+    position: relative;
+    display: inline-block;
+    z-index: 20; /* Ensure menu container is above other card elements */
+
+    .main-icon-container {
+        width: 38px;
+        height: 38px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 7px;
+        background-color: #fff;
+        box-shadow: $apple-shadow;
+        transition: all $transition-medium ease;
+    
+        .icon {
+            transform: rotate(0deg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all $transition-medium $animation-curve;
+            
+            i {
+                font-size: 20px;
+                line-height: 0;
+            }
+        }
+    }
+    
+    &:hover {
+        .main-icon-container {
+            .icon {
+                transform: rotate(135deg);
+            }
+        }
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: $menu-spacing;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 5;
+    }
+
+    .menu-box {
+        position: absolute;
+        opacity: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: $menu-spacing;
+        padding: $menu-item-padding;
+        width: max-content;
+        min-width: calc(38px + ($menu-item-padding * 2));
+        height: 0;
+        bottom: calc(100% + #{$menu-spacing});
+        left: 50%;
+        border-radius: $border-radius-lg;
+        transform: translateX(-50%);
+        overflow: hidden;
+        background-color: $apple-glass;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: $apple-shadow;
+        z-index: 30; /* Increased z-index to ensure menu appears above all card elements */
+        pointer-events: none;
+        transition: all $transition-medium $animation-curve;
+    }
+    
+    .menu-box, .menu-box::after {
+        pointer-events: auto;
+    }
+    
+    &:hover .menu-box {
+        height: calc(3 * 38px + 2 * #{$menu-spacing} + 2 * #{$menu-item-padding});
+        opacity: 1;
+    }
+
+    .menu-item {
+        width: 38px;
+        height: 38px;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        background-color: transparent;
+        border-radius: $border-radius-md;
+        transition: all $transition-medium ease;
+        cursor: pointer;
+        opacity: 0;
+        transform: translateY(10px);
+        position: relative;
+        overflow: hidden;
+
+        i {
+            line-height: 0;
+            font-size: 20px;
+        }
+
+        &:hover {
+            transform: scale(1.05);
+            
+            &.trash {
+                background-color: rgba($trash-color, 0.2);
+                i {
+                    color: $trash-color;
+                    position: relative;
+                    z-index: 1;
+                }
+                
+                &::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: -100%;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba($trash-color, 0.45);
+                    transition: transform $transition-medium ease;
+                    z-index: 0;
+                }
+                
+                &:active::before {
+                    animation: slideRight 0.5s linear forwards;
+                }
+            }
+
+            &.canvas {
+                background-color: rgba($secondary-color, 0.2);
+                i {
+                    color: $secondary-color;
+                }
+            }
+
+            &.copy {
+                background-color: rgba($secondary-color, 0.2);
+                i {
+                    color: $secondary-color;
+                }
+            }
+        }
+
+        &:active {
+            transform: scale(0.95);
+            background-color: rgba($accent-color, 0.2);
+        }
+
+        i {
+            font-size: 20px;
+            color: $secondary-color;
+            transition: all $transition-fast ease;
+        }
+    }
+
+    &:hover .menu-item {
+        opacity: 1;
+        transform: translateY(0);
+
+        &:nth-child(1) {
+            transition-delay: opacity 0.05s, transform 0.05s;
+        }
+        &:nth-child(2) {
+            transition-delay: opacity 0.1s, transform 0.1s;
+        }
+        &:nth-child(3) {
+            transition-delay: opacity 0.15s, transform 0.15s;
+        }
+    }
+}
+
+@keyframes slideRight {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}

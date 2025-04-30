@@ -1,0 +1,163 @@
+.menu-container {
+  position: relative;
+  display: inline-block;
+  z-index: 20; /* Ensure menu container is above other card elements */
+}
+.menu-container .main-icon-container {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 7px;
+  background-color: #fff;
+  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.12);
+  transition: all 0.3s ease;
+}
+.menu-container .main-icon-container .icon {
+  transform: rotate(0deg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 1.6, 0.8, 1);
+}
+.menu-container .main-icon-container .icon i {
+  font-size: 20px;
+  line-height: 0;
+}
+.menu-container:hover .main-icon-container .icon {
+  transform: rotate(135deg);
+}
+.menu-container::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 0.75rem;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+}
+.menu-container .menu-box {
+  position: absolute;
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  width: -moz-max-content;
+  width: max-content;
+  min-width: calc(38px + 1rem);
+  height: 0;
+  bottom: calc(100% + 0.75rem);
+  left: 50%;
+  border-radius: 1rem;
+  transform: translateX(-50%);
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.12);
+  z-index: 30; /* Increased z-index to ensure menu appears above all card elements */
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.25, 1.6, 0.8, 1);
+}
+.menu-container .menu-box, .menu-container .menu-box::after {
+  pointer-events: auto;
+}
+.menu-container:hover .menu-box {
+  height: calc(114px + 2 * 0.75rem + 2 * 0.5rem);
+  opacity: 1;
+}
+.menu-container .menu-item {
+  width: 38px;
+  height: 38px;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background-color: transparent;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(10px);
+  position: relative;
+  overflow: hidden;
+}
+.menu-container .menu-item i {
+  line-height: 0;
+  font-size: 20px;
+}
+.menu-container .menu-item:hover {
+  transform: scale(1.05);
+}
+.menu-container .menu-item:hover.trash {
+  background-color: rgba(179, 0, 9, 0.2);
+}
+.menu-container .menu-item:hover.trash i {
+  color: #b30009;
+  position: relative;
+  z-index: 1;
+}
+.menu-container .menu-item:hover.trash::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(179, 0, 9, 0.45);
+  transition: transform 0.3s ease;
+  z-index: 0;
+}
+.menu-container .menu-item:hover.trash:active::before {
+  animation: slideRight 0.5s linear forwards;
+}
+.menu-container .menu-item:hover.canvas {
+  background-color: rgba(29, 29, 31, 0.2);
+}
+.menu-container .menu-item:hover.canvas i {
+  color: #1d1d1f;
+}
+.menu-container .menu-item:hover.copy {
+  background-color: rgba(29, 29, 31, 0.2);
+}
+.menu-container .menu-item:hover.copy i {
+  color: #1d1d1f;
+}
+.menu-container .menu-item:active {
+  transform: scale(0.95);
+  background-color: rgba(63, 63, 63, 0.2);
+}
+.menu-container .menu-item i {
+  font-size: 20px;
+  color: #1d1d1f;
+  transition: all 0.2s ease;
+}
+.menu-container:hover .menu-item {
+  opacity: 1;
+  transform: translateY(0);
+}
+.menu-container:hover .menu-item:nth-child(1) {
+  transition-delay: opacity 0.05s, transform 0.05s;
+}
+.menu-container:hover .menu-item:nth-child(2) {
+  transition-delay: opacity 0.1s, transform 0.1s;
+}
+.menu-container:hover .menu-item:nth-child(3) {
+  transition-delay: opacity 0.15s, transform 0.15s;
+}
+
+@keyframes slideRight {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}/*# sourceMappingURL=menu_button.css.map */
