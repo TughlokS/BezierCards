@@ -1,6 +1,6 @@
 // === Color Constants ===
-const COLOR_BEZIER_START = '#353535'; // dark gray
-const COLOR_BEZIER_END = '#353535';   // dark gray
+const COLOR_BEZIER_START = '#6b6b6b'; // dark gray
+const COLOR_BEZIER_END = '#6b6b6b';   // dark gray
 
 // Debounce variables
 let resizeTimeout;
@@ -123,20 +123,62 @@ function createSVGElement(container, index) {
 
 // Initialize SVG and set up resize listener
 function initSVG(svg, index) {
-    // Initial draw
-    updateBezierSVG(svg);
-    
-    // Update on window resize
+    // Get target bezier values from the card
+    const card = svg.closest('.card');
+    const vals = card.querySelector('.card-content p').textContent.trim().split(',').map(Number);
+    const [targetX1, targetY1, targetX2, targetY2] = vals;
+
+    // Initial draw with linear curve (0,0,1,1)
+    updateBezierSVG(svg, 0, 0, 1, 1);
+
+    // Animate to target values
+    animateBezierCurve(svg, targetX1, targetY1, targetX2, targetY2);
+
+    // Update on window resize (redraw with final values)
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
-            updateBezierSVG(svg);
+            // Pass the final target values for resize updates
+            updateBezierSVG(svg, targetX1, targetY1, targetX2, targetY2);
         }, RESIZE_DELAY);
     });
 }
 
-// Update the SVG bezier curve based on container dimensions
-function updateBezierSVG(svg) {
+// --- Animation Function ---
+function animateBezierCurve(svg, targetX1, targetY1, targetX2, targetY2) {
+    const duration = 1000; // Animation duration in ms
+    const startX1 = 0, startY1 = 0, startX2 = 1, startY2 = 1;
+    let startTime = null;
+
+    function step(currentTime) {
+        if (!startTime) startTime = currentTime;
+        const elapsedTime = currentTime - startTime;
+        const progress = Math.min(elapsedTime / duration, 1);
+
+        // Simple ease-out easing function (t => 1 - pow(1 - t, 3))
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+
+        // Interpolate control points
+        const currentX1 = startX1 + (targetX1 - startX1) * easedProgress;
+        const currentY1 = startY1 + (targetY1 - startY1) * easedProgress;
+        const currentX2 = startX2 + (targetX2 - startX2) * easedProgress;
+        const currentY2 = startY2 + (targetY2 - startY2) * easedProgress;
+
+        // Update the SVG with interpolated values
+        updateBezierSVG(svg, currentX1, currentY1, currentX2, currentY2);
+
+        // Continue animation if not finished
+        if (progress < 1) {
+            requestAnimationFrame(step);
+        }
+    }
+
+    // Start the animation
+    requestAnimationFrame(step);
+}
+
+// Update the SVG bezier curve based on container dimensions and control points
+function updateBezierSVG(svg, x1, y1, x2, y2) { 
     // Get SVG dimensions
     const svgRect = svg.getBoundingClientRect();
     const width = svgRect.width;
@@ -163,12 +205,7 @@ function updateBezierSVG(svg) {
     const usableW = (p3_outer.x - p0_outer.x) - 2 * innerXOffset;
     const usableH = (p0_outer.y - p3_outer.y) - 2 * innerYOffset;
     
-    // Get bezier curve parameters from the card's text
-    const card = svg.closest('.card');
-    const vals = card.querySelector('.card-content p').textContent.trim().split(',').map(Number);
-    const [x1, y1, x2, y2] = vals;
-    
-    // Calculate control points within inner rectangle
+    // Calculate control points within inner rectangle using passed arguments
     const cp1 = { x: p0.x + x1 * usableW, y: p0.y - y1 * usableH };
     const cp2 = { x: p0.x + x2 * usableW, y: p0.y - y2 * usableH };
     
@@ -345,9 +382,12 @@ function hexToRgba(hex, alpha) {
 }
 
 // Force initial draw after a short delay to ensure SVG is properly sized
-setTimeout(() => {
-    const svgs = document.querySelectorAll('.bezier-svg');
-    svgs.forEach((svg) => {
-        updateBezierSVG(svg);
-    });
-}, 100);
+// --- MODIFIED: Initial draw is now handled by initSVG and animation ---
+// setTimeout(() => {
+//     const svgs = document.querySelectorAll('.bezier-svg');
+//     svgs.forEach((svg) => {
+//         // Need to get target values here if we were to call update directly
+//         // For simplicity, relying on initSVG to handle initial state and animation
+//         // updateBezierSVG(svg, /* need target values here */);
+//     });
+// }, 100);
